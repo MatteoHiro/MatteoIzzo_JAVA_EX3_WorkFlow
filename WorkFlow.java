@@ -2,8 +2,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class WorkFlow {
-    private List<Document> documents;
-    private List<Document> logDocuments;
+    private final List<Document> documents;
+    private final List<Document> logDocuments;
 
     public WorkFlow() {
         this.documents = new ArrayList<>();
