@@ -7,7 +7,6 @@ public class Document{
     String state;
     LocalDateTime productionDate;
     LocalDateTime modifyDateTime;
-    LocalDateTime timestamp;
 
 
     public Document(int id, String name, String state, LocalDateTime productionDate, LocalDateTime modifyDateTime) {
