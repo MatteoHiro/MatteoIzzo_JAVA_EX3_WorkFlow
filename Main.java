@@ -1,5 +1,8 @@
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.Scanner;
 
 public class Main {
 
@@ -41,6 +44,10 @@ public class Main {
         for (Document logDoc : wf.getLogDocuments()) {
             System.out.println(logDoc);
         }
+
+        // Chiamata al metodo per il MENU UTENTE
+        // Decommentare per utilizzarlo da terminale
+        // menu(wf);
     }
 
     // Menu utente 
@@ -141,9 +148,10 @@ public class Main {
                         return;
                     }
                 }
-                menu(wf);
             }
+            
         }
+        
         
     }
     
