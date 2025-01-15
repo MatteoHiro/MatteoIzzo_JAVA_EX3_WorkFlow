@@ -1,4 +1,3 @@
-
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -12,11 +11,13 @@ public class Main {
         final String workState3 = "Completato";
         final String workState4 = "Rifiutato";
 
+        User user1 = new User(1, "Mario Rossi", "Developer", "Mrossi@example.com", "Junior");
         Document doc1 = new Document(1, "Documento 1", workState1, LocalDateTime.now().minusDays(1), LocalDateTime.now().minusHours(1));
         WorkFlow wf = new WorkFlow();
 
         // Stato iniziale
-        wf.addDocument(doc1);
+        wf.addDocument(doc1, user1);
+        System.out.println("Utente: " + user1);
         System.out.println("Stato iniziale Progetto: " + doc1);
 
         // Primo cambio di stato
@@ -47,7 +48,7 @@ public class Main {
 
         // Chiamata al metodo per il MENU UTENTE
         // Decommentare per utilizzarlo da terminale
-        // menu(wf);
+        menu(wf);
     }
 
     // Menu utente 
@@ -62,6 +63,8 @@ public class Main {
                 System.out.println("3. Visualizza il log dei cambiamenti tramitre l'ID del documento");
                 System.out.println("4. Aggiorna lo stato di un documento");
                 System.out.println("5. Aggiungi un nuovo documento");
+                System.out.println("6. Elimina un documento");
+                System.out.println("7. Elimina tutti i documenti");
                 System.out.println("0. Esci");
                 System.out.print("Digita il numero corrispondete all'azione desiderata: ");
                 int choice = scanner.nextInt();
@@ -124,6 +127,16 @@ public class Main {
                         // Aggiungi un nuovo documento con ID che incrementa
                         // in base al numero di documenti presente in modo da non avere due id uguali
                         int newId = wf.getDocuments().size() + 1;
+                        int newUserId = wf.getUsers().size() + 1;
+
+                        System.out.print("Inserisci il nome dell'utente che ha creato il documento");
+                        String newUsername = scanner.nextLine();
+                        System.out.print("Inserisci il ruolo dell'utente che ha creato il documento: ");
+                        String newUserRole = scanner.nextLine();
+                        System.out.print("Inserisci l'email dell'utente che ha creato il documento: ");
+                        String newUserEmail = scanner.nextLine();
+                        System.out.print("Inserisci la seniority dell'utente che ha creato il documento: ");
+                        String newUserSeniority = scanner.nextLine();
                         System.out.print("Inserisci il nome del nuovo documento: ");
                         String newName = scanner.nextLine();
                         System.out.print("Inserisci lo stato iniziale del nuovo documento: ");
@@ -137,10 +150,39 @@ public class Main {
                             System.out.println("Formato data non valido! Assicurati di usare il formato YYYY-MM-DD HH:MM.");
                             continue; // Torna al menu senza aggiungere il documento
                         }
+
+                        User user = new User(newUserId, newUsername, newUserRole, newUserEmail, newUserSeniority);
                         Document newDoc = new Document(newId, newName, newState, newProductionDate, LocalDateTime.now());
-                        wf.addDocument(newDoc);
+                        wf.addDocument(newDoc, user);
                         wf.addLogDocument(newDoc);
                         System.out.println("Documento aggiunto con successo!");
+                    }
+
+                    case 6 -> {
+                        // Elimina un documento
+                        System.out.print("Inserisci l'ID del documento da eliminare: ");
+                        int idDELETE = scanner.nextInt();
+                        scanner.nextLine();
+                        boolean found = false;
+                        for (Document doc : wf.getDocuments()) {
+                            if (doc.getId() == idDELETE) {
+                                wf.removeDocument(doc);
+                                wf.addLogDocument(doc);
+                                System.out.println("Documento eliminato con successo!");
+                                found = true;
+                                break;
+                            }
+                        }
+                        if(!found){
+                            System.out.println("ID non associato a nessun documento!");
+                        }
+                    }
+
+                    case 7 -> {
+                        // Elimina tutti i documenti
+                        wf.getDocuments().clear();
+                        wf.getLogDocuments().clear();
+                        System.out.println("Tutti i documenti sono stati eliminati!");
                     }
 
                     case 0 -> {
