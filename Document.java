@@ -1,14 +1,15 @@
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 public class Document {
 
     int id;
-    String name;
-    String state;
-    LocalDateTime productionDate;
-    LocalDateTime modifyDateTime;
-    User user;
+    private String name;
+    private String state;
+    private LocalDateTime productionDate;
+    private LocalDateTime modifyDateTime;
+    private User user;
 
     public Document(int id, String name, String state, LocalDateTime productionDate, LocalDateTime modifyDateTime) {
         this.id = id;
@@ -67,7 +68,12 @@ public class Document {
 
     public Document clonedDoc() {
         Document clone = new Document(this.id, this.name, this.state, this.productionDate, this.modifyDateTime);
-        clone.setUser(this.user); // Copia l'utente associato
+        clone.setUser(this.user); 
+        return clone;
+    }
+
+    public User clonedUser(){
+        User clone = new User(this.user.getId(), this.user.getUsername(), this.user.getRole(), this.user.getEmail(), this.user.getSeniority());
         return clone;
     }
 
@@ -79,6 +85,7 @@ public class Document {
                 + ", Data di produzione: " + getFormattedDate(productionDate)
                 + ", Data modifiche: " + getFormattedDate(modifyDateTime)
                 + ", Utente: " + user.getUsername();
+
     }
 
 // Test

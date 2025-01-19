@@ -1,7 +1,9 @@
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class WorkFlow {
+
     private final List<Document> documents;
     private final List<Document> logDocuments;
     private final List<User> users;
@@ -48,12 +50,20 @@ public class WorkFlow {
         documents.remove(doc);
     }
 
-    
+    public List<Document> getUserID(){
+        List<Document> userID = new ArrayList<>();
+        for (Document doc : documents) {
+            userID.add(doc);
+        }
+        return userID;
+    }
 
-    
-
-
-   
-
+    public List<User> removeUser(){
+        List<User> removedUsers = new ArrayList<>();
+        for (User user : users) {
+            users.remove(user);
+        }
+        return removedUsers;
+    }
 
 }
