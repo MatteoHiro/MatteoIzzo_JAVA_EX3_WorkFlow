@@ -1,4 +1,8 @@
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,7 +21,21 @@ public class WorkFlow {
     public void addDocument(Document document, User user) {
         if (user == null) {
             System.err.print("Un documento deve essere creato da un utente valido.");
+            return;
         }
+        String query = "INSERT INTO documents (id, name, state, production_date, creation_date, user_id) VALUES (?, ?, ?, ?, ?, ?)";
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(query)) {
+        stmt.setInt(1, document.getId());
+        stmt.setString(2, document.getName());
+        stmt.setString(3, document.getState());
+        stmt.setTimestamp(4, Timestamp.valueOf(document.getProductionDate()));
+        stmt.setTimestamp(5, Timestamp.valueOf(document.getProductionDate()));
+        stmt.setInt(6, user.getId());
+        stmt.executeUpdate();
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
         document.setUser(user);
         documents.add(document);
     }
@@ -58,12 +76,14 @@ public class WorkFlow {
         return userID;
     }
 
-    public List<User> removeUser(){
-        List<User> removedUsers = new ArrayList<>();
-        for (User user : users) {
-            users.remove(user);
-        }
-        return removedUsers;
+    public List<User> removedUser(){
+        List<User> removedUsers = new ArrayList<>(users); // Crea una copia della lista degli utenti
+        users.clear(); // Pulisce la lista degli utenti
+        return removedUsers; // Restituisce gli utenti rimossi
+    }
+
+    public Document getDocumentById(int idLOG) {
+        throw new UnsupportedOperationException("Unimplemented method 'getDocumentById'");
     }
 
 }

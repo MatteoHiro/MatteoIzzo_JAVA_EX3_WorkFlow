@@ -1,4 +1,8 @@
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -119,6 +123,9 @@ public class Main {
                                 break;
                             }
                         }
+
+                        // Memorizza il log nel database
+                        wf.addLogDocument(wf.getDocumentById(idLOG));
                     }
                     case 4 -> {
                         // Aggiorna lo stato di un documento
@@ -167,7 +174,18 @@ public class Main {
                                 doc.setState(newState);
                                 doc.setUser(foundUser);
                                 wf.addLogDocument(doc);
-                                System.out.println("Stato aggiornato con successo!");
+
+                                // Aggiorna lo stato del documento nel database
+                                String query = "UPDATE documents SET state = ?, user_id = ? WHERE id = ?";
+                                try (Connection connection = DatabaseConnection.getConnection(); PreparedStatement statement = connection.prepareStatement(query)) {
+                                    statement.setString(1, newState);
+                                    statement.setInt(2, newUserId);
+                                    statement.setInt(3, idSTATE);
+                                    statement.executeUpdate();
+                                    System.out.println("Stato aggiornato con successo!");
+                                } catch (SQLException e) {
+                                    e.printStackTrace();
+                                }
                                 break;
                             }
                         }
@@ -182,22 +200,23 @@ public class Main {
                         // in base al numero di documenti presente in modo da non avere due id uguali
                         int newId = wf.getDocuments().size() + 1;
 
-                        System.out.print("Inserisci l'ID dell'utente che ha creato il documento");
-                        int newUserId = scanner.nextInt();
-                        scanner.nextLine();
+                        System.out.print("Inserisci l'ID dell'utente che ha creato il documento: ");
+                        int userId = scanner.nextInt();
+                        scanner.nextLine(); // Consuma la nuova linea
 
-                        User foundUser = null;
-                        for (User user : wf.getUsers()) {
-                            if (user.getId() == newUserId) {
-                                foundUser = user;
+                        User user = null;
+                        for (User u : wf.getUsers()) {
+                            if (u.getId() == userId) {
+                                user = u;
                                 break;
                             }
                         }
 
-                        if (foundUser == null) {
-                            System.out.println("ID non associato a nessun utente!");
+                        if (user == null) {
+                            System.out.println("ID utente non trovato. Riprova.");
                             break;
                         }
+
                         System.out.print("Inserisci il nome del nuovo documento: ");
                         String newName = scanner.nextLine();
                         System.out.print("Inserisci lo stato iniziale del nuovo documento: ");
@@ -209,18 +228,27 @@ public class Main {
                             newProductionDate = LocalDateTime.parse(scanner.nextLine(), formatter);
                         } catch (DateTimeParseException e) {
                             System.out.println("Formato data non valido! Assicurati di usare il formato YYYY-MM-DD HH:MM.");
-                            continue; // Torna al menu senza aggiungere il documento
-                        }
-
-                        if (newProductionDate.isAfter(LocalDateTime.now())) {
-                            System.out.println("La data di produzione non può essere nel futuro!");
-                            continue;
+                            break; // Torna al menu senza aggiungere il documento
                         }
 
                         Document newDoc = new Document(newId, newName, newState, newProductionDate, LocalDateTime.now());
-                        wf.addDocument(newDoc, foundUser);
+                        wf.addDocument(newDoc, user);
                         wf.addLogDocument(newDoc);
-                        System.out.println("Documento aggiunto con successo!");
+
+                        // Aggiungi il documento al database
+                        String query = "INSERT INTO documents (id, name, state, production_date, creation_date, user_id) VALUES (?, ?, ?, ?, ?, ?)";
+                        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+                            stmt.setInt(1, newDoc.getId());
+                            stmt.setString(2, newDoc.getName());
+                            stmt.setString(3, newDoc.getState());
+                            stmt.setTimestamp(4, Timestamp.valueOf(newDoc.getProductionDate()));
+                            stmt.setTimestamp(5, Timestamp.valueOf(newDoc.getProductionDate()));
+                            stmt.setInt(6, user.getId());
+                            stmt.executeUpdate();
+                            System.out.println("Documento aggiunto con successo nel database!");
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                        }
                     }
 
                     case 6 -> {
@@ -234,18 +262,18 @@ public class Main {
 
                         // Richiesta ID documento da eliminare
                         System.out.print("Inserisci l'ID del documento da eliminare: ");
-                        int idDELETE;
-                        try {
-                            idDELETE = scanner.nextInt();
-                            scanner.nextLine();
-                            if (idDELETE <= 0) {
-                                System.out.println("L'ID deve essere un numero positivo!");
-                                continue;
+                        int idDELETE = scanner.nextInt();
+                        scanner.nextLine();
+                        boolean userFound = false;
+                        for (User user : wf.getUsers()) {
+                            if (user.getId() == idDELETE) {
+                                userFound = true;
+                                break;
                             }
-                        } catch (InputMismatchException e) {
-                            System.out.println("Errore: l'ID deve essere un numero!");
-                            scanner.nextLine(); // Consuma l'input errato
-                            continue;
+                        }
+                        if (!userFound) {
+                            System.out.println("ID utente non trovato. Riprova.");
+                            break;
                         }
 
                         boolean found = false;
@@ -261,6 +289,16 @@ public class Main {
 
                         if (!found) {
                             System.out.println("ID non associato a nessun documento!");
+                        }
+
+                        // Elimina il documento dal database
+                        String query = "DELETE FROM documents WHERE id = ?";
+                        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+                            stmt.setInt(1, idDELETE);
+                            stmt.executeUpdate();
+                            System.out.println("Documento eliminato con successo dal database!");
+                        } catch (SQLException e) {
+                            e.printStackTrace();
                         }
                     }
 
@@ -285,12 +323,9 @@ public class Main {
                         int idUSER = scanner.nextInt();
                         scanner.nextLine();
                         boolean found = false;
-                        for (Document userDoc : wf.getDocuments()) {
-                            if (userDoc.getId() == idUSER) {
+                        for (User user : wf.getUsers()) {
+                            if (user.getId() == idUSER) {
                                 found = true;
-                            }
-
-                            if (found) {
                                 System.err.println("Quale modifica vuoi effettuare?");
                                 System.out.println("1. Modifica username");
                                 System.out.println("2. Modifica ruolo");
@@ -303,37 +338,81 @@ public class Main {
                                     case 1 -> {
                                         System.out.print("Inserisci il nuovo username: ");
                                         String newUsername = scanner.nextLine();
-                                        userDoc.getUser().setUsername(newUsername);
+                                        user.setUsername(newUsername);
                                         System.out.println("Username aggiornato con successo!");
+
+                                        // Aggiorna il database
+                                        String query = "UPDATE users SET username = ? WHERE id = ?";
+                                        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+                                            stmt.setString(1, newUsername);
+                                            stmt.setInt(2, user.getId());
+                                            stmt.executeUpdate();
+                                            System.out.println("Username aggiornato con successo nel database!");
+                                        } catch (SQLException e) {
+                                            e.printStackTrace();
+                                        }
                                     }
 
                                     case 2 -> {
                                         System.out.print("Inserisci il nuovo ruolo: ");
                                         String newRole = scanner.nextLine();
-                                        userDoc.getUser().setRole(newRole);
+                                        user.setRole(newRole);
                                         System.out.println("Ruolo aggiornato con successo!");
+
+                                        // Aggiorna il database
+                                        String query = "UPDATE users SET role = ? WHERE id = ?";
+                                        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+                                            stmt.setString(1, newRole);
+                                            stmt.setInt(2, user.getId());
+                                            stmt.executeUpdate();
+                                            System.out.println("Ruolo aggiornato con successo nel database!");
+                                        } catch (SQLException e) {
+                                            e.printStackTrace();
+                                        }
                                     }
 
                                     case 3 -> {
                                         System.out.print("Inserisci la nuova email: ");
                                         String newEmail = scanner.nextLine();
-                                        userDoc.getUser().setEmail(newEmail);
+                                        user.setEmail(newEmail);
                                         System.out.println("Email aggiornata con successo!");
+
+                                        // Aggiorna il database
+                                        String query = "UPDATE users SET email = ? WHERE id = ?";
+                                        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+                                            stmt.setString(1, newEmail);
+                                            stmt.setInt(2, user.getId());
+                                            stmt.executeUpdate();
+                                            System.out.println("Email aggiornata con successo nel database!");
+                                        } catch (SQLException e) {
+                                            e.printStackTrace();
+                                        }
                                     }
 
                                     case 4 -> {
                                         System.out.print("Inserisci la nuova seniority: ");
                                         String newSeniority = scanner.nextLine();
-                                        userDoc.getUser().setSeniority(newSeniority);
+                                        user.setSeniority(newSeniority);
                                         System.out.println("Seniority aggiornata con successo!");
+
+                                        // Aggiorna il database
+                                        String query = "UPDATE users SET seniority = ? WHERE id = ?";
+                                        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+                                            stmt.setString(1, newSeniority);
+                                            stmt.setInt(2, user.getId());
+                                            stmt.executeUpdate();
+                                            System.out.println("Seniority aggiornata con successo nel database!");
+                                        } catch (SQLException e) {
+                                            e.printStackTrace();
+                                        }
                                     }
                                 }
-                            }
-
-                            if (!found) {
-                                System.out.println("ID non associato a nessun utente!");
                                 break;
                             }
+                        }
+
+                        if (!found) {
+                            System.out.println("ID non associato a nessun utente!");
                         }
                     }
 
@@ -349,10 +428,11 @@ public class Main {
                                 break;
                             }
                         }
-                        wf.removeUser();
+                        wf.removedUser();
                         System.out.println("Utenti eliminati con successo!");
                     }
 
+                    // Aggiungi utente
                     case 11 -> {
                         System.out.print("Inserisci il nome dell'utente da aggiungere: ");
                         String newUsername = scanner.nextLine();
@@ -396,6 +476,11 @@ public class Main {
                         User newUser = new User(newUserID, newUsername, newUserRole, newUserEmail, newUserSeniority);
                         wf.addUser(newUser);
                         System.out.println("Utente aggiunto con successo!");
+
+                        // Aggiungi l'utente al database
+                        UserDAO userDAO = new UserDAO();
+                        userDAO.addUserToDatabase(newUser);
+                        break;
                     }
 
                     case 0 -> {

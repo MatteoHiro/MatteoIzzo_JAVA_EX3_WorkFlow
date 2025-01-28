@@ -1,4 +1,7 @@
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,6 +30,18 @@ public class User {
         }
         users.add(user);
         System.out.println("Utente aggiunto: " + user.getUsername()); // Aggiungi un log
+           String query = "INSERT INTO users (id, username, role, email, seniority) VALUES (?, ?, ?, ?, ?)";
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(query)) {
+        stmt.setInt(1, user.getId());
+        stmt.setString(2, user.getUsername());
+        stmt.setString(3, user.getRole());
+        stmt.setString(4, user.getEmail());
+        stmt.setString(5, user.getSeniority());
+        stmt.executeUpdate();
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
     }
 
     public int getId() {

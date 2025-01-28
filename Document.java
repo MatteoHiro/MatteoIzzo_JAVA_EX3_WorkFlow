@@ -98,4 +98,8 @@ public class Document {
     //     Document clonedDoc = doc.clonedDoc();
     //     System.out.println("Copia del documento: " + clonedDoc);
     // }
+
+    LocalDateTime getModifyDateTime() {
+        return modifyDateTime;
+    }
 }
