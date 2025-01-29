@@ -53,7 +53,7 @@ public class Main {
                         }
 
                         // Visualizza tutti i documenti nel database
-                        String query = "SELECT * FROM documents";
+                        String query = "SELECT * FROM Document";
                         wf.showDocumentsFromDB(query);
                         break;
 
@@ -78,7 +78,7 @@ public class Main {
                         }
 
                         // Visualizza il documento nel database
-                        String query = "SELECT * FROM documents WHERE id = " + id;
+                        String query = "SELECT * FROM Document WHERE id_document = " + id;
                         wf.showDocumentsFromDB(query);
                         break;
 
@@ -102,7 +102,7 @@ public class Main {
                         }
 
                         // Visualizza il log del documento nel database
-                        String queryLOG = "SELECT * FROM document_logs WHERE document_id = " + idLOG;
+                        String queryLOG = "SELECT * FROM document_version WHERE documento_id = " + idLOG;
                         wf.showDocumentsFromDB(queryLOG);
                         break;
                     }
@@ -157,7 +157,7 @@ public class Main {
                                 wf.addLogDocument(doc);
 
                                 // Aggiorna lo stato del documento nel database
-                                String query = "UPDATE documents SET state = ?, user_id = ? WHERE id = ?";
+                                String query = "UPDATE Document SET state_doc = ?, id_user = ? WHERE id_document = ?";
                                 try (Connection connection = DatabaseConnection.getConnection(); PreparedStatement statement = connection.prepareStatement(query)) {
                                     statement.setString(1, newState);
                                     statement.setInt(2, newUserId);
@@ -165,7 +165,7 @@ public class Main {
                                     statement.executeUpdate();
                                     System.out.println("Stato aggiornato con successo!");
                                 } catch (SQLException e) {
-                                    e.printStackTrace();
+                                    System.err.println("Errore durante l'aggiunta del documento nel database: " + e.getMessage());
                                 }
                                 break;
                             }
@@ -176,7 +176,7 @@ public class Main {
                         }
 
                         // Memorizza il log del documento nel database
-                        String queryLOG = "INSERT INTO document_logs (document_id, name, state, production_date, creation_date, user_id) VALUES (?, ?, ?, ?, ?, ?)";
+                        String queryLOG = "INSERT INTO document_version (documento_id, name_doc, state_doc, productionDate, id_user) VALUES (?, ?, ?, ?, ?)";
                         try (Connection connection = DatabaseConnection.getConnection(); PreparedStatement statement = connection.prepareStatement(queryLOG)) {
                             statement.setInt(1, idSTATE);
                             statement.setString(2, doc.getName());
@@ -204,14 +204,15 @@ public class Main {
                         for (User u : wf.getUsers()) {
                             if (u.getId() == userId) {
                                 user = u;
-                                break;
+                                break; // Esci dal ciclo non appena trovi l'utente
                             }
                         }
-
+                        
                         if (user == null) {
                             System.out.println("ID utente non trovato. Riprova.");
                             break;
                         }
+                        
 
                         System.out.print("Inserisci il nome del nuovo documento: ");
                         String newName = scanner.nextLine();
@@ -227,24 +228,11 @@ public class Main {
                             break; // Torna al menu senza aggiungere il documento
                         }
 
-                        Document newDoc = new Document(newId, newName, newState, newProductionDate, LocalDateTime.now());
+                        Document newDoc = new Document(newId, newName, newState, newProductionDate, LocalDateTime.now(), user);
                         wf.addDocument(newDoc, user);
                         wf.addLogDocument(newDoc);
 
-                        // Aggiungi il documento al database
-                        String query = "INSERT INTO documents (id, name, state, production_date, creation_date, user_id) VALUES (?, ?, ?, ?, ?, ?)";
-                        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
-                            stmt.setInt(1, newDoc.getId());
-                            stmt.setString(2, newDoc.getName());
-                            stmt.setString(3, newDoc.getState());
-                            stmt.setTimestamp(4, Timestamp.valueOf(newDoc.getProductionDate()));
-                            stmt.setTimestamp(5, Timestamp.valueOf(newDoc.getProductionDate()));
-                            stmt.setInt(6, user.getId());
-                            stmt.executeUpdate();
-                            System.out.println("Documento aggiunto con successo nel database!");
-                        } catch (SQLException e) {
-                            e.printStackTrace();
-                        }
+
                     }
 
                     case 6 -> {
@@ -253,7 +241,7 @@ public class Main {
                         scanner.nextLine();
 
                         // Controlla se l'ID esiste nel database prima di tentare la cancellazione
-                        String checkQuery = "SELECT COUNT(*) FROM documents WHERE id = ?";
+                        String checkQuery = "SELECT COUNT(*) FROM Document WHERE id_document = ?";
                         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement checkStmt = conn.prepareStatement(checkQuery)) {
 
                             checkStmt.setInt(1, idDELETE);
@@ -285,7 +273,7 @@ public class Main {
                         }
 
                         // Elimina il documento dal database
-                        String query = "DELETE FROM documents WHERE id = ?";
+                        String query = "DELETE FROM Document WHERE id_document = ?";
                         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
 
                             stmt.setInt(1, idDELETE);
@@ -310,7 +298,7 @@ public class Main {
                         System.out.println("Tutti i documenti sono stati eliminati!");
 
                         // Elimina tutti i documenti dal database
-                        String query = "DELETE FROM documents";
+                        String query = "DELETE FROM Document";
                         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
                             stmt.executeUpdate();
                             System.out.println("Tutti i documenti sono stati eliminati dal database!");
@@ -328,13 +316,13 @@ public class Main {
                         }
 
                         // Visualizza gli utenti nel database
-                        String query = "SELECT * FROM users";
+                        String query = "SELECT * FROM User";
                         try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(query)) {
                             System.out.println("ID\tUsername\tRuolo\tEmail\tSeniority");
                             while (rs.next()) {
-                                int id = rs.getInt("id");
+                                int id = rs.getInt("id_user");
                                 String username = rs.getString("username");
-                                String role = rs.getString("role");
+                                String role = rs.getString("role_job");
                                 String email = rs.getString("email");
                                 String seniority = rs.getString("seniority");
                                 System.out.printf("%d\t%s\t%s\t%s\t%s\n", id, username, role, email, seniority);
@@ -369,7 +357,7 @@ public class Main {
                                         System.out.println("Username aggiornato con successo!");
 
                                         // Aggiorna il database
-                                        String query = "UPDATE users SET username = ? WHERE id = ?";
+                                        String query = "UPDATE User SET username = ? WHERE id_user = ?";
                                         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
                                             stmt.setString(1, newUsername);
                                             stmt.setInt(2, user.getId());
@@ -387,7 +375,7 @@ public class Main {
                                         System.out.println("Ruolo aggiornato con successo!");
 
                                         // Aggiorna il database
-                                        String query = "UPDATE users SET role = ? WHERE id = ?";
+                                        String query = "UPDATE User SET role_job = ? WHERE id_user = ?";
                                         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
                                             stmt.setString(1, newRole);
                                             stmt.setInt(2, user.getId());
@@ -405,7 +393,7 @@ public class Main {
                                         System.out.println("Email aggiornata con successo!");
 
                                         // Aggiorna il database
-                                        String query = "UPDATE users SET email = ? WHERE id = ?";
+                                        String query = "UPDATE User SET email = ? WHERE id_user = ?";
                                         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
                                             stmt.setString(1, newEmail);
                                             stmt.setInt(2, user.getId());
@@ -423,7 +411,7 @@ public class Main {
                                         System.out.println("Seniority aggiornata con successo!");
 
                                         // Aggiorna il database
-                                        String query = "UPDATE users SET seniority = ? WHERE id = ?";
+                                        String query = "UPDATE User SET seniority = ? WHERE id_user = ?";
                                         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
                                             stmt.setString(1, newSeniority);
                                             stmt.setInt(2, user.getId());
@@ -459,7 +447,7 @@ public class Main {
                         System.out.println("Utenti eliminati con successo!");
 
                         // Elimina l'utente dal database
-                        String query = "DELETE FROM users WHERE id = ?";
+                        String query = "DELETE FROM User WHERE id_user = ?";
                         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
                             stmt.setInt(1, idUSER);
                             stmt.executeUpdate();
@@ -510,7 +498,8 @@ public class Main {
                         }
 
                         int newUserID = wf.getUsers().size() + 1;
-                        User newUser = new User(newUserID, newUsername, newUserRole, newUserEmail, newUserSeniority);
+                        LocalDateTime dataCreazione = LocalDateTime.now();
+                        User newUser = new User(newUserID, newUsername, newUserRole, newUserEmail, newUserSeniority, Timestamp.valueOf(dataCreazione));
                         wf.addUser(newUser);
                         System.out.println("Utente aggiunto con successo!");
 

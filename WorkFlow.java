@@ -3,6 +3,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,19 +25,20 @@ public class WorkFlow {
             System.err.print("Un documento deve essere creato da un utente valido.");
             return;
         }
-        String query = "INSERT INTO documents (id, name, state, production_date, creation_date, user_id) VALUES (?, ?, ?, ?, ?, ?)";
-    try (Connection conn = DatabaseConnection.getConnection();
-         PreparedStatement stmt = conn.prepareStatement(query)) {
-        stmt.setInt(1, document.getId());
-        stmt.setString(2, document.getName());
-        stmt.setString(3, document.getState());
-        stmt.setTimestamp(4, Timestamp.valueOf(document.getProductionDate()));
-        stmt.setTimestamp(5, Timestamp.valueOf(document.getProductionDate()));
-        stmt.setInt(6, user.getId());
-        stmt.executeUpdate();
-    } catch (SQLException e) {
-        e.printStackTrace();
-    }
+        String query = "INSERT INTO Document (name_doc, state_doc, productionDate, modifyDateTime, id_user) VALUES (?, ?, ?, ?, ?)";
+        try (Connection connection = DatabaseConnection.getConnection(); PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setString(1, document.getName());
+            statement.setString(2, document.getState());
+            statement.setString(3, document.getFormattedDate(document.getProductionDate()));
+            statement.setString(4, document.getFormattedDate(document.getModifyDateTime()));
+            statement.setInt(5, document.getUser().getId());  
+
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
         document.setUser(user);
         documents.add(document);
     }
@@ -46,6 +48,25 @@ public class WorkFlow {
     }
 
     public List<User> getUsers() {
+        List<User> users = new ArrayList<>();
+        String query = "SELECT id_user, username, role_job, email, seniority, data_creazione_utente FROM User";
+        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(query)) {
+
+            while (rs.next()) {
+                int id = rs.getInt("id_user");
+                String username = rs.getString("username");
+                String roleJob = rs.getString("role_job");
+                String email = rs.getString("email");
+                String seniority = rs.getString("seniority");
+                Timestamp dataCreazione = rs.getTimestamp("data_creazione_utente");
+
+                // Crea un nuovo oggetto User con i dati recuperati
+                User user = new User(id, username, roleJob, email, seniority, dataCreazione);
+                users.add(user);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return users;
     }
 
@@ -69,7 +90,7 @@ public class WorkFlow {
         documents.remove(doc);
     }
 
-    public List<Document> getUserID(){
+    public List<Document> getUserID() {
         List<Document> userID = new ArrayList<>();
         for (Document doc : documents) {
             userID.add(doc);
@@ -77,7 +98,7 @@ public class WorkFlow {
         return userID;
     }
 
-    public List<User> removedUser(){
+    public List<User> removedUser() {
         List<User> removedUsers = new ArrayList<>(users); // Crea una copia della lista degli utenti
         users.clear(); // Pulisce la lista degli utenti
         return removedUsers; // Restituisce gli utenti rimossi
@@ -93,19 +114,20 @@ public class WorkFlow {
     }
 
     public void showDocumentsFromDB(String query) {
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
+        System.out.println("Documenti presenti nel database:");
+        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
-                int id = rs.getInt("id");
-                String name = rs.getString("name");
-                String state = rs.getString("state");
-                Timestamp productionDate = rs.getTimestamp("production_date");
-                Timestamp creationDate = rs.getTimestamp("creation_date");
-                int userId = rs.getInt("user_id");
-                System.out.println("ID: " + id + ", Name: " + name + ", State: " + state + 
-                                   ", Production Date: " + productionDate + ", Creation Date: " + creationDate + 
-                                   ", User ID: " + userId);
+                int id = rs.getInt("id_document");
+                String name = rs.getString("name_doc");
+                String state = rs.getString("state_doc");
+                Timestamp productionDate = rs.getTimestamp("productionDate");
+                Timestamp modifyDateTime = rs.getTimestamp("modifyDateTime");
+                int userId = rs.getInt("id_user");
+                System.out.println("ID: " + id + ", Name: " + name + ", State: " + state
+                        + ", Production Date: " + productionDate
+                        + ", User ID: " + userId
+                        + ", Ultima modifica: " + modifyDateTime);
             }
         } catch (SQLException e) {
             e.printStackTrace();

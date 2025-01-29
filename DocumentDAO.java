@@ -1,21 +1,26 @@
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 
 public class DocumentDAO {
 
     public void addDocumentToDatabase(Document document) {
-        String query = "INSERT INTO documents (id, name, state, productionDate, modifyDateTime, userId) VALUES (?, ?, ?, ?, ?, ?)";
+        String query = "INSERT INTO Document (name_doc, state_doc, productionDate, modifyDateTime, id_user) VALUES (?, ?, ?, ?, ?)";
 
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
 
-            statement.setInt(1, document.getId());
-            statement.setString(2, document.getName());
-            statement.setString(3, document.getState());
-            statement.setString(4, document.getFormattedDate(document.getProductionDate()));
-            statement.setString(5, document.getFormattedDate(document.getModifyDateTime()));
-            statement.setInt(6, document.getUser().getId());
+            // Non settare id_document perché è AUTO_INCREMENT
+            statement.setString(1, document.getName());
+            statement.setString(2, document.getState());
+            
+            // Passa direttamente il Timestamp
+            statement.setTimestamp(3, Timestamp.valueOf(document.getProductionDate()));
+            statement.setTimestamp(4, Timestamp.valueOf(document.getModifyDateTime()));
+            
+            // Setta l'ID dell'utente
+            statement.setInt(5, document.getUser().getId());
 
             statement.executeUpdate();
         } catch (SQLException e) {
@@ -23,4 +28,3 @@ public class DocumentDAO {
         }
     }
 }
-

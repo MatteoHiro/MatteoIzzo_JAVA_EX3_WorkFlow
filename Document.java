@@ -1,24 +1,25 @@
-
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 public class Document {
 
-    int id;
+    private int id;
     private String name;
     private String state;
     private LocalDateTime productionDate;
     private LocalDateTime modifyDateTime;
     private User user;
 
-    public Document(int id, String name, String state, LocalDateTime productionDate, LocalDateTime modifyDateTime) {
+    public Document(int id, String name, String state, LocalDateTime productionDate, LocalDateTime modifyDateTime, User user) {
         this.id = id;
         this.name = name;
         this.state = state;
         this.productionDate = productionDate;
         this.modifyDateTime = modifyDateTime;
+        this.user = user;
     }
 
+    // Getter e Setter
     public int getId() {
         return this.id;
     }
@@ -45,9 +46,10 @@ public class Document {
     }
 
     public String getFormattedDate(LocalDateTime dateTime) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         return dateTime.format(formatter);
     }
+    
 
     public String getState() {
         return this.state;
@@ -67,14 +69,16 @@ public class Document {
     }
 
     public Document clonedDoc() {
-        Document clone = new Document(this.id, this.name, this.state, this.productionDate, this.modifyDateTime);
-        clone.setUser(this.user); 
+        Document clone = new Document(this.id, this.name, this.state, this.productionDate, this.modifyDateTime, this.user);
         return clone;
     }
 
-    public User clonedUser(){
-        User clone = new User(this.user.getId(), this.user.getUsername(), this.user.getRole(), this.user.getEmail(), this.user.getSeniority());
-        return clone;
+    public User clonedUser() {
+        if (this.user != null) {
+            User clone = new User(this.user.getId(), this.user.getUsername(), this.user.getRole(), this.user.getEmail(), this.user.getSeniority(), this.user.getDataCreazione());
+            return clone;
+        }
+        return null; // Restituisce null se l'utente è null
     }
 
     @Override
@@ -84,22 +88,22 @@ public class Document {
                 + ", Stato: '" + state + '\''
                 + ", Data di produzione: " + getFormattedDate(productionDate)
                 + ", Data modifiche: " + getFormattedDate(modifyDateTime)
-                + ", Utente: " + user.getUsername();
-
+                + ", Utente: " + (user != null ? user.getUsername() : "N/A");
     }
 
-// Test
+    // Getter per la data di modifica
+    public LocalDateTime getModifyDateTime() {
+        return modifyDateTime;
+    }
+
+    // Test
     // public static void main(String[] args) {
-    //     Document doc = new Document(1, "Documento 1", "In corso", LocalDateTime.now().minusDays(1), LocalDateTime.now().minusHours(1));
-    //     User user = new User("Mario Rossi");
+    //     Document doc = new Document(1, "Documento 1", "In corso", LocalDateTime.now().minusDays(1), LocalDateTime.now().minusHours(1), null);
+    //     User user = new User(1, "Mario Rossi", "Developer", "mario@example.com", "Junior", LocalDateTime.now().minusMonths(1));
     //     doc.setUser(user);
     //     System.out.println(doc);
     //     
     //     Document clonedDoc = doc.clonedDoc();
     //     System.out.println("Copia del documento: " + clonedDoc);
     // }
-
-    LocalDateTime getModifyDateTime() {
-        return modifyDateTime;
-    }
 }

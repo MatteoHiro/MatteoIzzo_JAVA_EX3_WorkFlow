@@ -1,55 +1,32 @@
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
+import java.sql.Timestamp;
 
 public class User {
 
-    private static List<User> users = new ArrayList<>();
+    private int id_user;
+    private String username;
+    private String role_job;
+    private String email;
+    private String seniority;
+    private Timestamp data_creazione_utente;
 
-    int id;
-   private String username;
-   private String role;
-   private String email;
-   private String seniority;
-
-    public User(int newUserId, String userName, String userRole, String userEmail, String userSeniority) {
-        this.id = newUserId;
-        this.username = userName;
-        this.role = userRole;
-        this.email = userEmail;
-        this.seniority = userSeniority;
-    }
-
-    public void addUser(User user) {
-        if (user == null) {
-            System.err.println("L'utente non può essere null.");
-            return;
-        }
-        users.add(user);
-        System.out.println("Utente aggiunto: " + user.getUsername()); // Aggiungi un log
-           String query = "INSERT INTO users (id, username, role, email, seniority) VALUES (?, ?, ?, ?, ?)";
-    try (Connection conn = DatabaseConnection.getConnection();
-         PreparedStatement stmt = conn.prepareStatement(query)) {
-        stmt.setInt(1, user.getId());
-        stmt.setString(2, user.getUsername());
-        stmt.setString(3, user.getRole());
-        stmt.setString(4, user.getEmail());
-        stmt.setString(5, user.getSeniority());
-        stmt.executeUpdate();
-    } catch (SQLException e) {
-        e.printStackTrace();
-    }
+    public User(int id_user, String username, String role, String email, String seniority, Timestamp dataCreazione) {
+        this.id_user = id_user;
+        this.username = username;
+        this.role_job = role;
+        this.email = email;
+        this.seniority = seniority;
+        this.data_creazione_utente = dataCreazione;
     }
 
     public int getId() {
-        return id;
+        return id_user;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setId(int id_user) {
+        this.id_user = id_user;
     }
 
     public String getUsername() {
@@ -61,11 +38,11 @@ public class User {
     }
 
     public String getRole() {
-        return role;
+        return role_job;
     }
 
     public void setRole(String role) {
-        this.role = role;
+        this.role_job = role;
     }
 
     public String getEmail() {
@@ -84,27 +61,34 @@ public class User {
         this.seniority = seniority;
     }
 
-    public User cloneUser(){
-        return new User(this.id, this.username, this.role, this.email, this.seniority);
+    public Timestamp getDataCreazione() {
+        return data_creazione_utente;
     }
 
-    @Override
-    public String toString() {
-        return "User: "
-                + "id: " + id
-                + ", username: '" + username + '\''
-                + ", role: '" + role + '\''
-                + ", email: '" + email + '\''
-                + ", seniority: '" + seniority + '\'';
+    public void setDataCreazione(Timestamp dataCreazione) {
+        this.data_creazione_utente = dataCreazione;
     }
 
-    // public static void main(String[] args) {
-    //     User user = new User();
-    //     user.setId(1);
-    //     user.setUsername("admin");
-    //     user.setRole("Admin");
-    //     user.setEmail("admin@example.com");
-    //     user.setSeniority("Senior Developer");
-    //     System.out.println(user);
-    // }
+    public void addUser(User user) {
+        if (user == null) {
+            System.err.println("L'utente non può essere null.");
+            return;
+        }
+        // codice per aggiungere l'utente alla lista o al database
+        System.out.println("Utente aggiunto: " + user.getUsername());
+        String query = "INSERT INTO User (id_user, username, role_job, email, seniority, data_creazione_utente) VALUES (?, ?, ?, ?, ?, ?)";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setInt(1, user.getId());
+            stmt.setString(2, user.getUsername());
+            stmt.setString(3, user.getRole());
+            stmt.setString(4, user.getEmail());
+            stmt.setString(5, user.getSeniority());
+            stmt.setTimestamp(6, user.getDataCreazione()); // Aggiungi la data di creazione
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
 }

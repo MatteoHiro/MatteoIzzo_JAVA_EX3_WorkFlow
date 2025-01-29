@@ -8,7 +8,7 @@ public class UserDAO {
     private static final Logger LOGGER = Logger.getLogger(UserDAO.class.getName());
 
     public void addUserToDatabase(User user) {
-        String query = "INSERT INTO users (id, username, role, email, seniority) VALUES (?, ?, ?, ?, ?)";
+        String query = "INSERT INTO User (id_user, username, role_job, email, seniority) VALUES (?, ?, ?, ?, ?)";
         
         // Verifica che l'utente non sia null prima di procedere
         if (user == null) {
