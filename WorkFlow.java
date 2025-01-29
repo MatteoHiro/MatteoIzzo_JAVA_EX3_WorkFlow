@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,7 +33,7 @@ public class WorkFlow {
             statement.setString(2, document.getState());
             statement.setString(3, document.getFormattedDate(document.getProductionDate()));
             statement.setString(4, document.getFormattedDate(document.getModifyDateTime()));
-            statement.setInt(5, document.getUser().getId());  
+            statement.setInt(5, document.getUser().getId());
 
             statement.executeUpdate();
         } catch (SQLException e) {
@@ -132,6 +133,72 @@ public class WorkFlow {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    public void loadDocumentsFromDB() {
+        String query = "SELECT * FROM Document";
+        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(query)) {
+            while (rs.next()) {
+                int id = rs.getInt("id_document");
+                String name = rs.getString("name_doc");
+                String state = rs.getString("state_doc");
+                LocalDateTime productionDate = rs.getTimestamp("productionDate").toLocalDateTime();
+                int userId = rs.getInt("id_user");
+                User user = getUserById(userId);
+                Document doc = new Document(id, name, state, productionDate, LocalDateTime.now(), user);
+                documents.add(doc);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void showDocumentLogs(int documentId) {
+        String query = "SELECT * FROM document_version WHERE documento_id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setInt(1, documentId); // Imposta l'id del documento da cercare nei log
+
+            ResultSet rs = stmt.executeQuery();
+
+            // Controlla se ci sono risultati
+            if (!rs.next()) {
+                System.out.println("Nessun log trovato per il documento con ID: " + documentId);
+                return;
+            }
+
+            // Cicla sui risultati e mostra i log
+            do {
+                int id = rs.getInt("id_document_version");
+                String name = rs.getString("name_doc");
+                String state = rs.getString("state_doc");
+                Timestamp productionDate = rs.getTimestamp("productionDate");
+                Timestamp modifyDateTime = rs.getTimestamp("modifyDateTime");
+                int userId = rs.getInt("id_user");
+
+                System.out.println("Log ID: " + id);
+                System.out.println("Nome documento: " + name);
+                System.out.println("Stato documento: " + state);
+                System.out.println("Data di produzione: " + productionDate);
+                System.out.println("Data di modifica: " + modifyDateTime);
+                System.out.println("ID utente: " + userId);
+                System.out.println("---------------------------");
+
+            } while (rs.next());
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private User getUserById(int userId) {
+        for (User user : users) {
+            if (user.getId() == userId) {
+                return user;
+            }
+        }
+        return null;
     }
 
 }

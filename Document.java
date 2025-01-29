@@ -81,15 +81,7 @@ public class Document {
         return null; // Restituisce null se l'utente è null
     }
 
-    @Override
-    public String toString() {
-        return "id: " + id
-                + ", Nome: '" + name + '\''
-                + ", Stato: '" + state + '\''
-                + ", Data di produzione: " + getFormattedDate(productionDate)
-                + ", Data modifiche: " + getFormattedDate(modifyDateTime)
-                + ", Utente: " + (user != null ? user.getUsername() : "N/A");
-    }
+
 
     // Getter per la data di modifica
     public LocalDateTime getModifyDateTime() {

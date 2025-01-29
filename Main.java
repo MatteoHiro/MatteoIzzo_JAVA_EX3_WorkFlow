@@ -59,6 +59,9 @@ public class Main {
 
                     }
                     case 2 -> {
+                        // Carica i documenti dal database
+                        wf.loadDocumentsFromDB();
+
                         // Cerca un documento tramite ID
                         System.out.print("Inserisci l'ID del documento da cercare: ");
                         int id = scanner.nextInt();
@@ -69,19 +72,18 @@ public class Main {
                             if (doc.getId() == id) {
                                 System.out.println(doc);
                                 found = true;
+                                break;
                             }
                         }
 
                         if (!found) {
                             System.out.println("ID non associato a nessun documento!");
-                            break;
                         }
 
                         // Visualizza il documento nel database
                         String query = "SELECT * FROM Document WHERE id_document = " + id;
                         wf.showDocumentsFromDB(query);
                         break;
-
                     }
                     case 3 -> {
                         // Visualizza log dei cambiamenti di un documento
@@ -107,6 +109,9 @@ public class Main {
                         break;
                     }
                     case 4 -> {
+                        // Carica i documenti dal database
+                        wf.loadDocumentsFromDB();
+
                         // Aggiorna lo stato di un documento
                         System.out.print("Inserisci l'ID del documento da aggiornare: ");
                         int idSTATE;
@@ -165,29 +170,18 @@ public class Main {
                                     statement.executeUpdate();
                                     System.out.println("Stato aggiornato con successo!");
                                 } catch (SQLException e) {
-                                    System.err.println("Errore durante l'aggiunta del documento nel database: " + e.getMessage());
+                                    System.err.println("Errore durante l'aggiornamento dello stato nel database: " + e.getMessage());
                                 }
+
+                                // Visualizza i log delle modifiche del documento
+                                wf.showDocumentLogs(idSTATE);
+
                                 break;
                             }
                         }
 
                         if (!documentFound) {
                             System.out.println("ID documento non trovato!");
-                        }
-
-                        // Memorizza il log del documento nel database
-                        String queryLOG = "INSERT INTO document_version (documento_id, name_doc, state_doc, productionDate, id_user) VALUES (?, ?, ?, ?, ?)";
-                        try (Connection connection = DatabaseConnection.getConnection(); PreparedStatement statement = connection.prepareStatement(queryLOG)) {
-                            statement.setInt(1, idSTATE);
-                            statement.setString(2, doc.getName());
-                            statement.setString(3, doc.getState());
-                            statement.setTimestamp(4, Timestamp.valueOf(doc.getProductionDate()));
-                            statement.setTimestamp(5, Timestamp.valueOf(doc.getModifyDateTime()));
-                            statement.setInt(6, doc.getUser().getId());
-                            statement.executeUpdate();
-                            System.out.println("Log documento aggiunto con successo!");
-                        } catch (SQLException e) {
-                            e.printStackTrace();
                         }
                     }
 
@@ -207,12 +201,11 @@ public class Main {
                                 break; // Esci dal ciclo non appena trovi l'utente
                             }
                         }
-                        
+
                         if (user == null) {
                             System.out.println("ID utente non trovato. Riprova.");
                             break;
                         }
-                        
 
                         System.out.print("Inserisci il nome del nuovo documento: ");
                         String newName = scanner.nextLine();
@@ -231,7 +224,6 @@ public class Main {
                         Document newDoc = new Document(newId, newName, newState, newProductionDate, LocalDateTime.now(), user);
                         wf.addDocument(newDoc, user);
                         wf.addLogDocument(newDoc);
-
 
                     }
 
