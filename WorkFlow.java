@@ -1,6 +1,7 @@
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -83,7 +84,32 @@ public class WorkFlow {
     }
 
     public Document getDocumentById(int idLOG) {
-        throw new UnsupportedOperationException("Unimplemented method 'getDocumentById'");
+        for (Document doc : documents) {
+            if (doc.getId() == idLOG) {
+                return doc;
+            }
+        }
+        return null;
+    }
+
+    public void showDocumentsFromDB(String query) {
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String name = rs.getString("name");
+                String state = rs.getString("state");
+                Timestamp productionDate = rs.getTimestamp("production_date");
+                Timestamp creationDate = rs.getTimestamp("creation_date");
+                int userId = rs.getInt("user_id");
+                System.out.println("ID: " + id + ", Name: " + name + ", State: " + state + 
+                                   ", Production Date: " + productionDate + ", Creation Date: " + creationDate + 
+                                   ", User ID: " + userId);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
 }

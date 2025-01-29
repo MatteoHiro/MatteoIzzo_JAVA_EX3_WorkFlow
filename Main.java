@@ -1,7 +1,9 @@
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -13,43 +15,7 @@ import java.util.regex.Pattern;
 public class Main {
 
     public static void main(String[] args) {
-        // final String workState1 = "Messo in produzione";
-        // final String workState2 = "In fase di revisione";
-        // final String workState3 = "Completato";
-        // final String workState4 = "Rifiutato";
-
-        // User user1 = new User(1, "Mario Rossi", "Developer", "Mrossi@example.com", "Junior");
-        // Document doc1 = new Document(1, "Documento 1", workState1, LocalDateTime.now(), LocalDateTime.now());
         WorkFlow wf = new WorkFlow();
-
-        // // Stato iniziale
-        // wf.addDocument(doc1, user1);
-        // wf.addUser(user1);
-        // System.out.println("Utente: " + user1);
-        // System.out.println("Stato iniziale Progetto: " + doc1);
-        // // Primo cambio di stato
-        // doc1.setState(workState1);
-        // wf.addLogDocument(doc1);
-        // System.out.println("Aggiornamento: Stato cambiato a '" + workState1 + "'");
-        // // Secondo cambio di stato
-        // doc1.setState(workState2);
-        // wf.addLogDocument(doc1);
-        // System.out.println("Aggiornamento: Stato cambiato a '" + workState2 + "'");
-        // // Terzo cambio di stato
-        // doc1.setState(workState3);
-        // wf.addLogDocument(doc1);
-        // System.out.println("Aggiornamento: Stato cambiato a '" + workState3 + "'");
-        // // Rifiuto del documento
-        // doc1.setState(workState4);
-        // wf.addLogDocument(doc1);
-        // System.out.println("Aggiornamento: Documento rifiutato");
-        // // Mostra il log dei cambiamenti
-        // System.out.println("\nMemoria dei log:");
-        // for (Document logDoc : wf.getLogDocuments()) {
-        //     System.out.println(logDoc);
-        // }
-        // Chiamata al metodo per il MENU UTENTE
-        // Decommentare per utilizzarlo da terminale
         menu(wf);
     }
 
@@ -85,6 +51,12 @@ public class Main {
                         for (Document doc : wf.getDocuments()) {
                             System.out.println(doc);
                         }
+
+                        // Visualizza tutti i documenti nel database
+                        String query = "SELECT * FROM documents";
+                        wf.showDocumentsFromDB(query);
+                        break;
+
                     }
                     case 2 -> {
                         // Cerca un documento tramite ID
@@ -98,12 +70,17 @@ public class Main {
                                 System.out.println(doc);
                                 found = true;
                             }
-                            if (!found) {
-                                System.out.println("ID non associato a nessun documento!");
-                                break;
-                            }
-
                         }
+
+                        if (!found) {
+                            System.out.println("ID non associato a nessun documento!");
+                            break;
+                        }
+
+                        // Visualizza il documento nel database
+                        String query = "SELECT * FROM documents WHERE id = " + id;
+                        wf.showDocumentsFromDB(query);
+                        break;
 
                     }
                     case 3 -> {
@@ -117,15 +94,17 @@ public class Main {
                                 System.out.println(docLOG);
                                 found = true;
                             }
-
-                            if (!found) {
-                                System.out.println("ID non associato a nessun documento!");
-                                break;
-                            }
                         }
 
-                        // Memorizza il log nel database
-                        wf.addLogDocument(wf.getDocumentById(idLOG));
+                        if (!found) {
+                            System.out.println("ID non associato a nessun documento!");
+                            break;
+                        }
+
+                        // Visualizza il log del documento nel database
+                        String queryLOG = "SELECT * FROM document_logs WHERE document_id = " + idLOG;
+                        wf.showDocumentsFromDB(queryLOG);
+                        break;
                     }
                     case 4 -> {
                         // Aggiorna lo stato di un documento
@@ -140,9 +119,11 @@ public class Main {
                             break;
                         }
 
+                        Document doc = null;
                         boolean documentFound = false;
-                        for (Document doc : wf.getDocuments()) {
-                            if (doc.getId() == idSTATE) {
+                        for (Document d : wf.getDocuments()) {
+                            if (d.getId() == idSTATE) {
+                                doc = d;
                                 documentFound = true;
                                 System.out.print("Inserisci il nuovo stato del documento: ");
                                 String newState = scanner.nextLine();
@@ -192,6 +173,21 @@ public class Main {
 
                         if (!documentFound) {
                             System.out.println("ID documento non trovato!");
+                        }
+
+                        // Memorizza il log del documento nel database
+                        String queryLOG = "INSERT INTO document_logs (document_id, name, state, production_date, creation_date, user_id) VALUES (?, ?, ?, ?, ?, ?)";
+                        try (Connection connection = DatabaseConnection.getConnection(); PreparedStatement statement = connection.prepareStatement(queryLOG)) {
+                            statement.setInt(1, idSTATE);
+                            statement.setString(2, doc.getName());
+                            statement.setString(3, doc.getState());
+                            statement.setTimestamp(4, Timestamp.valueOf(doc.getProductionDate()));
+                            statement.setTimestamp(5, Timestamp.valueOf(doc.getModifyDateTime()));
+                            statement.setInt(6, doc.getUser().getId());
+                            statement.executeUpdate();
+                            System.out.println("Log documento aggiunto con successo!");
+                        } catch (SQLException e) {
+                            e.printStackTrace();
                         }
                     }
 
@@ -252,52 +248,57 @@ public class Main {
                     }
 
                     case 6 -> {
-                        // Conferma prima di eliminare
-                        System.out.print("Sei sicuro di voler eliminare questo documento? (s/n): ");
-                        String confirmation = scanner.nextLine().toLowerCase();
-                        if (!confirmation.equals("s")) {
-                            System.out.println("Operazione annullata.");
-                            continue;
-                        }
-
-                        // Richiesta ID documento da eliminare
                         System.out.print("Inserisci l'ID del documento da eliminare: ");
                         int idDELETE = scanner.nextInt();
                         scanner.nextLine();
-                        boolean userFound = false;
-                        for (User user : wf.getUsers()) {
-                            if (user.getId() == idDELETE) {
-                                userFound = true;
-                                break;
+
+                        // Controlla se l'ID esiste nel database prima di tentare la cancellazione
+                        String checkQuery = "SELECT COUNT(*) FROM documents WHERE id = ?";
+                        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement checkStmt = conn.prepareStatement(checkQuery)) {
+
+                            checkStmt.setInt(1, idDELETE);
+                            ResultSet rs = checkStmt.executeQuery();
+                            if (rs.next() && rs.getInt(1) == 0) {
+                                System.out.println("ID non trovato nel database!");
+                                return;
                             }
-                        }
-                        if (!userFound) {
-                            System.out.println("ID utente non trovato. Riprova.");
-                            break;
+
+                        } catch (SQLException e) {
+                            System.out.println("Errore durante la verifica dell'ID.");
+                            e.printStackTrace();
+                            return;
                         }
 
+                        // Rimuove il documento dalla memoria e aggiunge il log
                         boolean found = false;
                         for (Document doc : wf.getDocuments()) {
                             if (doc.getId() == idDELETE) {
                                 wf.removeDocument(doc);
                                 wf.addLogDocument(doc);
-                                System.out.println("Documento eliminato con successo!");
                                 found = true;
                                 break;
                             }
                         }
 
                         if (!found) {
-                            System.out.println("ID non associato a nessun documento!");
+                            System.out.println("ID non associato a nessun documento in memoria!");
                         }
 
                         // Elimina il documento dal database
                         String query = "DELETE FROM documents WHERE id = ?";
                         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+
                             stmt.setInt(1, idDELETE);
-                            stmt.executeUpdate();
-                            System.out.println("Documento eliminato con successo dal database!");
+                            int rowsAffected = stmt.executeUpdate();
+
+                            if (rowsAffected > 0) {
+                                System.out.println("Documento eliminato con successo dal database!");
+                            } else {
+                                System.out.println("Errore: nessun documento eliminato.");
+                            }
+
                         } catch (SQLException e) {
+                            System.out.println("Errore durante l'eliminazione del documento.");
                             e.printStackTrace();
                         }
                     }
@@ -307,6 +308,16 @@ public class Main {
                         wf.getDocuments().clear();
                         wf.getLogDocuments().clear();
                         System.out.println("Tutti i documenti sono stati eliminati!");
+
+                        // Elimina tutti i documenti dal database
+                        String query = "DELETE FROM documents";
+                        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+                            stmt.executeUpdate();
+                            System.out.println("Tutti i documenti sono stati eliminati dal database!");
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                        }
+                        break;
                     }
 
                     case 8 -> {
@@ -314,6 +325,22 @@ public class Main {
                         System.out.println("Lista degli utenti:");
                         for (User user : wf.getUsers()) {
                             System.out.println(user);
+                        }
+
+                        // Visualizza gli utenti nel database
+                        String query = "SELECT * FROM users";
+                        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(query)) {
+                            System.out.println("ID\tUsername\tRuolo\tEmail\tSeniority");
+                            while (rs.next()) {
+                                int id = rs.getInt("id");
+                                String username = rs.getString("username");
+                                String role = rs.getString("role");
+                                String email = rs.getString("email");
+                                String seniority = rs.getString("seniority");
+                                System.out.printf("%d\t%s\t%s\t%s\t%s\n", id, username, role, email, seniority);
+                            }
+                        } catch (SQLException e) {
+                            e.printStackTrace();
                         }
                     }
 
@@ -430,6 +457,16 @@ public class Main {
                         }
                         wf.removedUser();
                         System.out.println("Utenti eliminati con successo!");
+
+                        // Elimina l'utente dal database
+                        String query = "DELETE FROM users WHERE id = ?";
+                        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+                            stmt.setInt(1, idUSER);
+                            stmt.executeUpdate();
+                            System.out.println("Utente eliminato con successo dal database!");
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                        }
                     }
 
                     // Aggiungi utente
