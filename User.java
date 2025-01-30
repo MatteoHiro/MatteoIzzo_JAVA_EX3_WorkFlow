@@ -1,3 +1,4 @@
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -77,8 +78,7 @@ public class User {
         // codice per aggiungere l'utente alla lista o al database
         System.out.println("Utente aggiunto: " + user.getUsername());
         String query = "INSERT INTO User (id_user, username, role_job, email, seniority, data_creazione_utente) VALUES (?, ?, ?, ?, ?, ?)";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
+        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
             stmt.setInt(1, user.getId());
             stmt.setString(2, user.getUsername());
             stmt.setString(3, user.getRole());
@@ -89,6 +89,19 @@ public class User {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public String toString() {
+        return String.format(
+                "%-15s %s%n%-15s %s%n%-15s %s%n%-15s %s%n%-15s %s%n%s%n",
+                "ID Utente:", id_user,
+                "Username:", username,
+                "Ruolo:", role_job,
+                "Email:", email,
+                "Seniority:", seniority,
+                "---------------------------------"
+        );
     }
 
 }

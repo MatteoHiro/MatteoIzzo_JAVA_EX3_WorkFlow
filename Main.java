@@ -17,6 +17,7 @@ public class Main {
     public static void main(String[] args) {
         WorkFlow wf = new WorkFlow();
         menu(wf);
+        // testWorkFlow();
     }
 
     // Menu utente 
@@ -310,15 +311,6 @@ public class Main {
                         // Visualizza gli utenti nel database
                         String query = "SELECT * FROM User";
                         try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(query)) {
-                            System.out.println("ID\tUsername\tRuolo\tEmail\tSeniority");
-                            while (rs.next()) {
-                                int id = rs.getInt("id_user");
-                                String username = rs.getString("username");
-                                String role = rs.getString("role_job");
-                                String email = rs.getString("email");
-                                String seniority = rs.getString("seniority");
-                                System.out.printf("%d\t%s\t%s\t%s\t%s\n", id, username, role, email, seniority);
-                            }
                         } catch (SQLException e) {
                             e.printStackTrace();
                         }
@@ -512,4 +504,51 @@ public class Main {
 
     }
 
+    // public static void testWorkFlow() {
+    //     WorkFlow wf = new WorkFlow();
+    //     // Carica i documenti dal database
+    //     System.out.println("Caricamento dei documenti dal database...");
+    //     wf.loadDocumentsFromDB();
+    //     System.out.println("Documenti caricati: " + wf.getDocuments().size());
+    //     // Test aggiunta utente
+    //     System.out.println("Aggiunta di un nuovo utente...");
+    //     User newUser = new User(1, "testUser", "admin", "test@example.com", "senior", Timestamp.valueOf(LocalDateTime.now()));
+    //     wf.addUser(newUser);
+    //     assert wf.getUsers().contains(newUser) : "Errore: L'utente non è stato aggiunto correttamente";
+    //     System.out.println("Utente aggiunto correttamente: " + newUser);
+    //     // Test aggiunta documento
+    //     System.out.println("Aggiunta di un nuovo documento...");
+    //     Document newDoc = new Document(1, "testDoc", "draft", LocalDateTime.now(), LocalDateTime.now(), newUser);
+    //     wf.addDocument(newDoc, newUser);
+    //     assert wf.getDocuments().contains(newDoc) : "Errore: Il documento non è stato aggiunto correttamente";
+    //     System.out.println("Documento aggiunto correttamente: " + newDoc);
+    //     // Test aggiornamento stato documento
+    //     System.out.println("Aggiornamento dello stato del documento...");
+    //     newDoc.setState("published");
+    //     wf.addLogDocument(newDoc);
+    //     assert "published".equals(newDoc.getState()) : "Errore: Lo stato del documento non è stato aggiornato correttamente";
+    //     System.out.println("Stato del documento aggiornato correttamente: " + newDoc);
+    //     // Test ricerca documento per ID
+    //     System.out.println("Ricerca del documento per ID...");
+    //     boolean found = false;
+    //     for (Document doc : wf.getDocuments()) {
+    //         if (doc.getId() == newDoc.getId()) {
+    //             found = true;
+    //             break;
+    //         }
+    //     }
+    //     assert found : "Errore: Il documento non è stato trovato tramite ID";
+    //     System.out.println("Documento trovato correttamente per ID: " + newDoc.getId());
+    //     // Test visualizzazione utenti
+    //     System.out.println("Visualizzazione della lista degli utenti:");
+    //     for (User user : wf.getUsers()) {
+    //         System.out.println(user);
+    //     }
+    //     // Test visualizzazione documenti
+    //     System.out.println("Visualizzazione della lista dei documenti:");
+    //     for (Document doc : wf.getDocuments()) {
+    //         System.out.println(doc);
+    //     }
+    //     System.out.println("Tutti i test sono stati eseguiti con successo!");
+    // }
 }

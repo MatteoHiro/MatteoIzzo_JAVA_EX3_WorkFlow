@@ -1,3 +1,4 @@
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -49,7 +50,6 @@ public class Document {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         return dateTime.format(formatter);
     }
-    
 
     public String getState() {
         return this.state;
@@ -80,8 +80,6 @@ public class Document {
         }
         return null; // Restituisce null se l'utente è null
     }
-
-
 
     // Getter per la data di modifica
     public LocalDateTime getModifyDateTime() {
