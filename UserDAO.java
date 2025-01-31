@@ -21,7 +21,7 @@ public class UserDAO {
         try (Connection connection = DatabaseConnection.getConnection(); PreparedStatement statement = connection.prepareStatement(query)) {
 
             // Impostazione dei parametri della query
-            statement.setInt(1, user.getId());
+            // statement.setInt(1, user.getId());
             statement.setString(2, user.getUsername());
             statement.setString(3, user.getRole());
             statement.setString(4, user.getEmail());
